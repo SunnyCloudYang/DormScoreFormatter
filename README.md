@@ -39,7 +39,7 @@ pip install pandas openpyxl
 
 4. Run the script using the following command:
 
-   ````
+   ```
    python DormScoreFormatter.py --folder path/to/your/csv/files
    ```
 
