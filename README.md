@@ -2,7 +2,7 @@
 
 ## Description
 
-DormScoreFormatter.py is a Python script designed to process and format dorm inspection scores. It takes multiple CSV files containing weekly dorm scores and combines them into a single, formatted Excel file. This tool is particularly useful for dorm administrators or student organizations managing dorm inspections.
+DormScoreFormatter.py is a Python script designed to process and format dorm inspection scores. It takes multiple CSV files containing weekly dorm scores and combines them into a single, formatted Excel file and a PDF file. This tool is particularly useful for dorm administrators or student organizations managing dorm inspections.
 
 ## Features
 
@@ -13,6 +13,7 @@ DormScoreFormatter.py is a Python script designed to process and format dorm ins
   - Contact information for inquiries
   - Neatly organized scores and comments
   - Automatic pagination for easy printing
+- Export PDF files for easy printing
 
 ## Requirements
 
@@ -22,11 +23,12 @@ To run this script, you need:
 2. The following Python libraries:
    - pandas
    - openpyxl
+   - win32com.client (only required for exporting PDFs on Windows)
 
 You can install these libraries using pip:
 
 ```
-pip install pandas openpyxl
+pip install pandas openpyxl pywin32
 ```
 
 ## How to Use
@@ -37,7 +39,13 @@ pip install pandas openpyxl
 
 3. Navigate to the folder containing the DormScoreFormatter.py script.
 
-4. Run the script using the following command:
+4. Run the script with the following command to view the script's help information and optional arguments:
+
+   ```
+   python DormScoreFormatter.py --help
+   ```
+
+5. Run the script using the following command:
 
    ```
    python DormScoreFormatter.py --folder path/to/your/csv/files
@@ -45,7 +53,7 @@ pip install pandas openpyxl
 
    Replace `path/to/your/csv/files` with the actual path to the folder containing your CSV files.
 
-5. The script will process the files and create an Excel file named after the dorm number and week (e.g., "紫荆公寓2号楼第1周.xlsx") in the same folder as the script.
+6. The script will process the files and create an Excel file named after the dorm number and week (e.g., "紫荆公寓2号楼第1周.xlsx") in the same folder as the script.
 
 ## Output
 
@@ -54,9 +62,8 @@ The resulting Excel file will contain:
 - A title with the dorm number and week
 - Contact information for inquiries
 - Formatted tables with room numbers, bed numbers, total scores, and improvement comments
-- Automatic pagination for easy printing
 
-If there are blank cells in the score table, the position of the blank cell will be printed in the console for easy checking.
+If there are blank cells in the score table, the position of the blank cell will be printed in the console for easy checking and the cell will be filled with red in the Excel file.
 
 ## Troubleshooting
 

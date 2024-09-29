@@ -2,17 +2,17 @@
 
 ## 描述
 
-DormScoreFormatter.py 是一个用于处理和格式化宿舍检查评分的 Python 脚本。它可以将下载的多个包含每周宿舍评分的 CSV 文件合并成一个可以直接打印的格式化的 Excel 文件。
+DormScoreFormatter.py 是一个用于处理和格式化宿舍检查评分的 Python 脚本。它可以将下载的多个包含每周宿舍评分的 CSV 文件合并成一个格式化的 Excel 文件和可以直接打印的PDF文件。
 
 ## 功能
 
 - 合并多个包含每周宿舍评分的 CSV 文件
-- 处理和格式化数据
-- 创建结构良好的 Excel 文件，包括：
+- 去重和格式化数据
+- 创建 Excel 文件，包括：
   - 包含宿舍楼号和周数的标题
-  - 查询联系信息
-  - 整洁组织的分数和评语
-  - 自动分页，便于打印
+  - 楼长联系信息
+  - 空白单元格标红，便于检查修正
+- 导出PDF文件，可以直接打印
 
 ## 要求
 
@@ -22,11 +22,12 @@ DormScoreFormatter.py 是一个用于处理和格式化宿舍检查评分的 Pyt
 2. 以下 Python 库：
    - pandas
    - openpyxl
+   - win32com.client (仅在 Windows 上导出 PDF 时需要)
 
-您可以使用 pip 安装这些库：
+可以使用 pip 安装这些库：
 
 ```
-pip install pandas openpyxl
+pip install pandas openpyxl pywin32
 ```
 
 ## 使用方法
@@ -37,7 +38,13 @@ pip install pandas openpyxl
 
 3. 导航到包含 DormScoreFormatter.py 脚本的文件夹。
 
-4. 使用以下命令运行脚本：
+4. 使用以下命令查看脚本的帮助信息和可选参数：
+
+   ```
+   python DormScoreFormatter.py --help
+   ```
+
+5. 使用以下命令运行脚本（根据自己需要添加参数）：
 
    ```
    python DormScoreFormatter.py --folder \path\to\csv\folder
@@ -45,16 +52,15 @@ pip install pandas openpyxl
 
    将 `\path\to\csv\folder` 替换为包含 CSV 文件的实际文件夹路径，如果不指定文件夹，则默认使用脚本所在的文件夹。
 
-5. 脚本将处理文件并在脚本所在的文件夹中创建一个以宿舍楼号和周数命名的 Excel 文件（例如："紫荆公寓2号楼第1周.xlsx"）。
+6. 脚本将处理文件并在脚本所在的文件夹中创建一个以宿舍楼号和周数命名的 Excel 文件（例如："紫荆公寓2号楼第1周.xlsx"）。
 
 ## 输出
 
 生成的 Excel 文件将包含：
 
 - 包含宿舍楼号和周数的标题
-- 查询联系信息
+- 楼长联系信息
 - 格式化的表格，包括房间号、床位号、总分和整改意见
-- 自动分页，便于打印
 
 如果成绩表中出现空白单元格，将在控制台中打印出空白单元格的位置，方便检查。
 

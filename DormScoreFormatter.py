@@ -122,7 +122,7 @@ def generatePDF(folder_path, excel_file):
 
 def main():
     parser = argparse.ArgumentParser(description='Process WeekScoreManage CSV files and create Excel and PDF report.')
-    parser.add_argument('--folder', default='.', help='path to the folder containing CSV files')
+    parser.add_argument('--folder', default='.', help='rel/abs path to the folder containing CSV files, default is current folder')
     parser.add_argument('--email', default='xxx', help='prefix of your THU email address, like \'yunyang-21\'')
     parser.add_argument('--pdf', default='true', help='whether to generate PDF file', choices=['true', 'false'])
     parser.add_argument('--overwrite', default='false', help='overwrite existing excel files', choices=['true', 'false'])
