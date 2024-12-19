@@ -9,10 +9,15 @@ import re
 
 def load_and_process_csv_files(folder_path):
     all_data = []
+    current_week = None
     for file in os.listdir(folder_path):
         if file.startswith('WeekScoreManage_') and file.endswith('.csv'):
             file_path = os.path.join(folder_path, file)
             df = pd.read_csv(file_path, encoding='gbk')
+            if current_week is None:
+                current_week = df['周'].iloc[0]
+            else:
+                assert current_week == df['周'].iloc[0], f"Week number is not consistent in all CSV files. It's {current_week} in the first file and {df['周'].iloc[0]} in {file_path}."
             all_data.append(df)
     
     combined_df = pd.concat(all_data, ignore_index=True)
@@ -27,6 +32,8 @@ def create_excel_file(df, output_file, email_prefix, folder_path):
     no_error = True
     wb = Workbook()
     ws = wb.active
+    
+    assert ws is not None, "Failed to open Excel."
 
     # Set column widths
     for col in ['A', 'B', 'C', 'E', 'F', 'G']:
@@ -131,41 +138,43 @@ def main():
     args = parser.parse_args()
     
     no_error = True
-    
-    if args.pdfOnly.lower() == 'true':
-        for file in os.listdir(args.folder):
-            if file.endswith('.xlsx'):
-                generatePDF(args.folder, file)
-        return
+    try:
+        if args.pdfOnly.lower() == 'true':
+            for file in os.listdir(args.folder):
+                if file.endswith('.xlsx'):
+                    generatePDF(args.folder, file)
+            return
 
-    df = load_and_process_csv_files(args.folder)
-    
-    # Check if the output file already exists
-    output_file = f"{df['楼号'].iloc[0]}{df['周'].iloc[0]}.xlsx"
-    if os.path.exists(os.path.join(args.folder, output_file)) and args.overwrite.lower() == 'false':
-        print(f"Excel file '{output_file}' already exists. Please set '--overwrite true' to overwrite it.")
-    else:
-        no_error = create_excel_file(df, output_file, args.email, args.folder)
-    print(f"Excel file '{output_file}' has been created successfully.")
-    
-    if args.pdf.lower() == 'true' and no_error:
-        generatePDF(args.folder, output_file)
-    elif not no_error:
-        confirm = input("There are empty cells in the Excel file. Do you still want to generate PDF file? (Y/[N]) ")
-        if confirm.lower() == 'y':
+        df = load_and_process_csv_files(args.folder)
+        
+        # Check if the output file already exists
+        output_file = f"{df['楼号'].iloc[0]}{df['周'].iloc[0]}.xlsx"
+        if os.path.exists(os.path.join(args.folder, output_file)) and args.overwrite.lower() == 'false':
+            print(f"Excel file '{output_file}' already exists. Please set '--overwrite true' to overwrite it.")
+        else:
+            no_error = create_excel_file(df, output_file, args.email, args.folder)
+        print(f"Excel file '{output_file}' has been created successfully.")
+        
+        if args.pdf.lower() == 'true' and no_error:
             generatePDF(args.folder, output_file)
-        else:
-            print("PDF file will not be generated.")
-            
-    if args.clean.lower() == 'true' and no_error:
-        clean_up(args.folder)
-    elif not no_error:
-        confirm = input("There are empty cells in the Excel file. Do you still want to clean up the CSV files? (Y/[N]) ")
-        if confirm.lower() == 'y':
+        elif not no_error:
+            confirm = input("There are empty cells in the Excel file. Do you still want to generate PDF file? (Y/[N]) ")
+            if confirm.lower() == 'y':
+                generatePDF(args.folder, output_file)
+            else:
+                print("PDF file will not be generated.")
+                
+        if args.clean.lower() == 'true' and no_error:
             clean_up(args.folder)
-            print("CSV files have been cleaned up.")
-        else:
-            print("CSV files will not be cleaned up.")
+        elif not no_error:
+            confirm = input("There are empty cells in the Excel file. Do you still want to clean up the CSV files? (Y/[N]) ")
+            if confirm.lower() == 'y':
+                clean_up(args.folder)
+                print("CSV files have been cleaned up.")
+            else:
+                print("CSV files will not be cleaned up.")
+    except Exception as e:
+        logging.error('Error occurred while processing CSV files.', e)
             
 def clean_up(folder_path):
     print("Cleaning up CSV files...")
