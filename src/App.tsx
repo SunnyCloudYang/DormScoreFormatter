@@ -391,7 +391,7 @@ function App({ darkMode, onDarkModeChange }: AppProps) {
     ];
 
     // Helper function to set cell value and style
-    const addFormattedCell = (cellRef: string, _row: number, value: string) => {
+    const addFormattedCell = (cellRef: string, value: string) => {
       // Set the cell value
       ws[cellRef] = {
         v: value,
@@ -417,23 +417,26 @@ function App({ darkMode, onDarkModeChange }: AppProps) {
     };
 
     // Add title rows
-    addFormattedCell("A1", 1, title);
+    addFormattedCell("A1", title);
     addFormattedCell(
       "A2",
-      2,
       "勤工大队楼层长分队统一意见邮箱：thu.lczh@gmail.com"
     );
     addFormattedCell(
       "A3",
-      3,
       `如有疑问请联系学生楼长：${emailPrefix}@mails.tsinghua.edu.cn 或登陆家园网查询具体成绩`
     );
+    for (let i = 0; i < 4; i++) {
+      for (let j = 1; j < 8; j++) {
+        addFormattedCell(XLSX.utils.encode_cell({ r: i, c: j }), "");
+      }
+    }
 
     // Add headers
     const headers = ["房间", "床位", "总分", "整改意见"];
     headers.forEach((header, idx) => {
-      addFormattedCell(XLSX.utils.encode_cell({ r: 3, c: idx }), 4, header);
-      addFormattedCell(XLSX.utils.encode_cell({ r: 3, c: idx + 4 }), 4, header);
+      addFormattedCell(XLSX.utils.encode_cell({ r: 3, c: idx }), header);
+      addFormattedCell(XLSX.utils.encode_cell({ r: 3, c: idx + 4 }), header);
     });
 
     // Process data rows
@@ -502,6 +505,11 @@ function App({ darkMode, onDarkModeChange }: AppProps) {
 
       rowsOnPage++;
     });
+    for (let i = currentRow + 1; i <= maxRow; i++) {
+      for (let j = 4; j < 8; j++) {
+        addFormattedCell(XLSX.utils.encode_cell({ r: i, c: j }), "");
+      }
+    }
 
     // Set the worksheet reference range
     ws["!ref"] = XLSX.utils.encode_range({
