@@ -248,7 +248,7 @@ function App({ darkMode, onDarkModeChange }: AppProps) {
       console.log("Excel workbook created");
 
       // Generate the Excel file
-      const excelFileName = `${buildingNumber}${targetWeek}.xlsx`;
+      const excelFileName = `${buildingNumber}第${targetWeek}周卫生成绩.xlsx`;
       console.log("Saving Excel file:", excelFileName);
       XLSX.writeFile(workbook, excelFileName);
       console.log("Excel file saved successfully");
