@@ -45,7 +45,7 @@ const translations = {
     advancedOptions: "Advanced Options",
     rowsPerPage: "Rows Per Page",
     rowsHelperText: "Number of rows to display per page in the Excel file",
-    processFiles: "Process Files",
+    processFiles: "Generate Excel File",
     processing: "Processing...",
     darkMode: "Dark Mode",
     language: "中文",
@@ -67,7 +67,7 @@ const translations = {
     advancedOptions: "高级选项",
     rowsPerPage: "每页行数",
     rowsHelperText: "Excel文件中每页包含的行数",
-    processFiles: "处理文件",
+    processFiles: "生成 Excel 文件",
     processing: "处理中...",
     darkMode: "深色模式",
     language: "En",
@@ -528,7 +528,7 @@ function App({ darkMode, onDarkModeChange }: AppProps) {
   };
 
   return (
-    <Container maxWidth="md" sx={{ py: 6 }}>
+    <Container maxWidth="md">
       <Stack spacing={4}>
         {/* Header Section with Theme and Language Controls */}
         <Box
@@ -564,6 +564,7 @@ function App({ darkMode, onDarkModeChange }: AppProps) {
             gutterBottom
             sx={{
               fontWeight: 700,
+              fontSize: "clamp(1.75rem, 6vw, 3rem)",
               background: "linear-gradient(45deg, #1976d2, #42a5f5)",
               backgroundClip: "text",
               WebkitBackgroundClip: "text",
@@ -762,12 +763,14 @@ function App({ darkMode, onDarkModeChange }: AppProps) {
               </Box>
               <Collapse in={showAdvanced}>
                 <Paper
-                  // variant="outlined"
+                  variant="outlined"
                   sx={{
                     pt: 2,
-                    borderRadius: 2,
-                    // borderColor: "primary.light",
-                    backgroundColor: "#00000000",
+                    borderRadius: 0,
+                    borderBottomColor: "transparent",
+                    borderLeftColor: "transparent",
+                    borderRightColor: "transparent",
+                    backgroundColor: "transparent",
                   }}
                   elevation={0}
                 >
