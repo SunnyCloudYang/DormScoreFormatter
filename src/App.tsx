@@ -353,7 +353,7 @@ function App({ darkMode, onDarkModeChange }: AppProps) {
       if (a["房间"] === b["房间"]) {
         return a["床位"] - b["床位"];
       }
-      return a["房间"].localeCompare(b["房间"]);
+      return a["房间"].toString().localeCompare(b["房间"].toString());
     });
 
     console.log("Data sorted, final count:", sortedData.length);
