@@ -16,6 +16,15 @@ import {
   Tooltip,
   Switch,
   FormControlLabel,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Radio,
+  RadioGroup,
+  FormControl,
+  FormLabel,
+  FormControlLabel as MuiFormControlLabel,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
@@ -91,6 +100,12 @@ function App({ darkMode, onDarkModeChange }: AppProps) {
     const saved = localStorage.getItem("language");
     return saved === "en" || saved === "zh" ? saved : "en";
   });
+  const [buildingNumbers, setBuildingNumbers] = useState<string[]>([]);
+  const [selectedBuildingNumber, setSelectedBuildingNumber] =
+    useState<string>("");
+  const [showBuildingDialog, setShowBuildingDialog] = useState(false);
+  const [fileData, setFileData] = useState<{ file: string; data: any[] }[]>([]);
+  const [weekCounts, setWeekCounts] = useState<Map<number, number>>(new Map());
 
   // Save language preference when it changes
   useEffect(() => {
@@ -121,13 +136,17 @@ function App({ darkMode, onDarkModeChange }: AppProps) {
     setLoading(true);
     setError(null);
     setSuccess(null);
+    setBuildingNumbers([]);
+    setSelectedBuildingNumber("");
+    setFileData([]);
+    setWeekCounts(new Map());
 
     try {
-      const fileData: { file: string; data: any[] }[] = [];
-      let buildingNumber = null;
-      const weekCounts = new Map<number, number>();
+      const tempFileData: { file: string; data: any[] }[] = [];
+      const tempWeekCounts = new Map<number, number>();
+      const tempBuildingNumbers = new Set<string>();
 
-      // First pass: load all files and count weeks
+      // First pass: load all files and collect building numbers
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
         console.log(`Processing file ${i + 1}/${files.length}:`, file.name);
@@ -152,14 +171,8 @@ function App({ darkMode, onDarkModeChange }: AppProps) {
           continue;
         }
 
-        // Set building number from first valid file
-        if (buildingNumber === null) {
-          buildingNumber = data[0]["楼号"];
-        } else if (buildingNumber !== data[0]["楼号"]) {
-          throw new Error(
-            `Building number mismatch in file ${file.name}. Expected ${buildingNumber}, found ${data[0]["楼号"]}`
-          );
-        }
+        // Collect building numbers
+        tempBuildingNumbers.add(data[0]["楼号"]);
 
         // Count occurrences of each week
         data.forEach((row) => {
@@ -167,23 +180,57 @@ function App({ darkMode, onDarkModeChange }: AppProps) {
           const weekMatch = weekStr.match(/第(\d+)周/);
           if (weekMatch) {
             const week = parseInt(weekMatch[1]);
-            weekCounts.set(week, (weekCounts.get(week) || 0) + 1);
+            tempWeekCounts.set(week, (tempWeekCounts.get(week) || 0) + 1);
           } else {
             console.warn(`Invalid week format in row:`, { weekStr, row });
           }
         });
 
-        fileData.push({ file: file.name, data });
+        tempFileData.push({ file: file.name, data });
       }
 
-      if (fileData.length === 0) {
+      if (tempFileData.length === 0) {
         throw new Error("No valid files found");
       }
 
-      if (weekCounts.size === 0) {
+      if (tempWeekCounts.size === 0) {
         throw new Error("No valid week numbers found in any files");
       }
 
+      // If multiple building numbers found, show selection dialog
+      if (tempBuildingNumbers.size > 1) {
+        setBuildingNumbers(Array.from(tempBuildingNumbers));
+        setFileData(tempFileData);
+        setWeekCounts(tempWeekCounts);
+        setShowBuildingDialog(true);
+        setLoading(false);
+        return;
+      }
+
+      // If only one building number, proceed with processing
+      const buildingNumber = Array.from(tempBuildingNumbers)[0];
+      await processDataWithBuildingNumber(
+        buildingNumber,
+        tempFileData,
+        tempWeekCounts
+      );
+    } catch (err) {
+      console.error("Error during processing:", err);
+      setError(
+        err instanceof Error
+          ? err.message
+          : "An error occurred while processing the files"
+      );
+      setLoading(false);
+    }
+  };
+
+  const processDataWithBuildingNumber = async (
+    buildingNumber: string,
+    data: { file: string; data: any[] }[],
+    weekCounts: Map<number, number>
+  ) => {
+    try {
       // Find the latest week
       const targetWeek = Math.max(...Array.from(weekCounts.keys()));
 
@@ -195,7 +242,7 @@ function App({ darkMode, onDarkModeChange }: AppProps) {
       });
 
       // Check which files are missing data for the latest week
-      const filesWithMissingData = fileData
+      const filesWithMissingData = data
         .filter(
           ({ data }) =>
             !data.some((row) => {
@@ -218,7 +265,7 @@ function App({ darkMode, onDarkModeChange }: AppProps) {
       }
 
       // Filter data for the latest week and combine
-      const allData = fileData.flatMap(({ data }) =>
+      const allData = data.flatMap(({ data }) =>
         data.filter((row) => {
           const weekMatch = row["周"].toString().match(/第(\d+)周/);
           return weekMatch && parseInt(weekMatch[1]) === targetWeek;
@@ -244,7 +291,12 @@ function App({ darkMode, onDarkModeChange }: AppProps) {
 
       // Create Excel file
       console.log("Creating Excel workbook...");
-      const workbook = createExcelWorkbook(processedData, emailPrefix);
+      const workbook = createExcelWorkbook(
+        processedData,
+        emailPrefix.includes("@")
+          ? emailPrefix
+          : emailPrefix + "@mails.tsinghua.edu.cn"
+      );
       console.log("Excel workbook created");
 
       // Generate the Excel file
@@ -269,6 +321,20 @@ function App({ darkMode, onDarkModeChange }: AppProps) {
       setLoading(false);
       console.log("Processing complete");
     }
+  };
+
+  const handleBuildingNumberSelect = async () => {
+    if (!selectedBuildingNumber) {
+      setError("Please select a building number");
+      return;
+    }
+    setShowBuildingDialog(false);
+    setLoading(true);
+    await processDataWithBuildingNumber(
+      selectedBuildingNumber,
+      fileData,
+      weekCounts
+    );
   };
 
   const readCSVFile = (file: File): Promise<any[]> => {
@@ -360,7 +426,7 @@ function App({ darkMode, onDarkModeChange }: AppProps) {
     return sortedData;
   };
 
-  const createExcelWorkbook = (data: any[], emailPrefix: string) => {
+  const createExcelWorkbook = (data: any[], email: string) => {
     console.log("Creating Excel workbook with data rows:", data.length);
     const wb = XLSX.utils.book_new();
 
@@ -424,7 +490,7 @@ function App({ darkMode, onDarkModeChange }: AppProps) {
     );
     addFormattedCell(
       "A3",
-      `如有疑问请联系学生楼长：${emailPrefix}@mails.tsinghua.edu.cn 或登陆家园网查询具体成绩`
+      `如有疑问请联系学生楼长：${email} 或登陆家园网查询具体成绩`
     );
     for (let i = 0; i < 4; i++) {
       for (let j = 1; j < 8; j++) {
@@ -827,6 +893,48 @@ function App({ darkMode, onDarkModeChange }: AppProps) {
             </Box>
           </Stack>
         </Paper>
+
+        {/* Building Number Selection Dialog */}
+        <Dialog
+          open={showBuildingDialog}
+          onClose={() => setShowBuildingDialog(false)}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>
+            {language === "en" ? "Select Building Number" : "选择楼号"}
+          </DialogTitle>
+          <DialogContent>
+            <FormControl component="fieldset">
+              <FormLabel component="legend">
+                {language === "en"
+                  ? "Multiple building numbers found. Please select one:"
+                  : "发现多个楼号，请选择一个："}
+              </FormLabel>
+              <RadioGroup
+                value={selectedBuildingNumber}
+                onChange={(e) => setSelectedBuildingNumber(e.target.value)}
+              >
+                {buildingNumbers.map((building) => (
+                  <MuiFormControlLabel
+                    key={building}
+                    value={building}
+                    control={<Radio />}
+                    label={building}
+                  />
+                ))}
+              </RadioGroup>
+            </FormControl>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setShowBuildingDialog(false)}>
+              {language === "en" ? "Cancel" : "取消"}
+            </Button>
+            <Button onClick={handleBuildingNumberSelect} variant="contained">
+              {language === "en" ? "Confirm" : "确认"}
+            </Button>
+          </DialogActions>
+        </Dialog>
 
         {/* Alerts */}
         <Box sx={{ position: "relative" }}>
